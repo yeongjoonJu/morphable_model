@@ -57,13 +57,15 @@ cdef class PcaModel:
     cpdef np.ndarray[float, ndim=2] draw_sample(self, np.ndarray[float, ndim=1] coeffs):
         cdef np.ndarray[float, ndim=1] temp_coeffs
         cdef np.ndarray[float, ndim=2] model_sample
+        cdef np.ndarray[float, ndim=2] trans_coeffs
 
         if len(coeffs) < self.rescaled_pca_basis.shape[1]:
             temp_coeffs = np.zeros(self.rescaled_pca_basis.shape[1])
             temp_coeffs[:len(coeffs)] = coeffs
             coeffs = temp_coeffs
 
-        model_sample = self.mean + self.rescaled_pca_basis * coeffs
+        trans_coeffs = coeffs.reshape((199,1))
+        model_sample = self.mean.reshape((-1,1)) + np.dot(self.rescaled_pca_basis, trans_coeffs)
         
         return model_sample
 
@@ -116,6 +118,24 @@ cdef class MorphableModel:
         if self.expression_model != None:
             shape += self.expression_model.get_mean()
         
+        if self.has_texture_coordinates():
+            mesh = sample_to_mesh(shape, color, self.shape_model.get_triangle_list(), self.color_model.get_triangle_list(), self.texture_coordinates, self.texture_triangle_indices)
+        else:
+            mesh = sample_to_mesh(shape, color, self.shape_model.get_triangle_list(), self.color_model.get_triangle_list())
+
+        return mesh
+
+    cpdef Mesh get_sample(self, np.ndarray[float,ndim=1] shape_coef, np.ndarray[float,ndim=1] color_coef):
+        cdef np.ndarray[float, ndim=1] shape, color
+        cdef Mesh mesh
+
+        mesh = Mesh()
+
+        assert (self.shape_model.get_data_dimension() == self.color_model.get_data_dimension() or self.has_color_model()==0)
+
+        shape = self.shape_model.draw_sample(shape_coef).reshape(-1)
+        color = self.color_model.draw_sample(color_coef).reshape(-1)
+
         if self.has_texture_coordinates():
             mesh = sample_to_mesh(shape, color, self.shape_model.get_triangle_list(), self.color_model.get_triangle_list(), self.texture_coordinates, self.texture_triangle_indices)
         else:

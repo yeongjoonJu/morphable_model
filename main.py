@@ -4,6 +4,7 @@ import eos, torch
 import mesh_utils as utils
 import cv2
 import time
+from scipy import io
 import json
 
 def load_bfm2019(bfm_2019_file):
@@ -35,25 +36,31 @@ def load_bfm2019(bfm_2019_file):
     return shape_model, color_model, expression_model
 
 if __name__=='__main__':
-    shape_model, color_model, expression_model = load_bfm2019('./bfm2019/model2019_fullHead.h5')
-    with open('model2019_textureMapping.json') as json_file:
-        json_data = json.load(json_file)
-    mm = utils.MorphableModel(shape_model, color_model, expression_model, json_data['textureMapping']['pointData'], json_data['textureMapping']['triangleIndex'])
-    mesh = mm.get_mean()
-    print(len(mesh.vertices))
-    start = time.time()
-    utils.write_obj(mesh, 'mean.obj')
-    #img = utils.generate_uv_map(mesh, 0.0, 0.0, 0.0, [0.0,1.0,1.0])
-    #print(time.time() - start)
-    #cv2.imwrite('uv_map.png', img*255)
-    utils.save_color_map(mesh, "mean.npy")
-    #utils.write_textured_obj(mesh, 'mean.obj')
-    # blendshapes = eos.morphablemodel.load_blendshapes('expression_blendshapes_3448.bin')
-    # print(len(blendshapes))
 
-    camera_distance = 2.732
-    elevation = 30
-    azimuth = 120
-    texture_size = 2
+    mat = io.loadmat('../Deep3DFaceReconstruction/output/015384.mat')
+    print(mat['face_color'].shape)
+    print(mat['coeff'].shape[1]-199)
+    shape_model, color_model, expression_model = load_bfm2019('./bfm2019/model2019_face12.h5')
+    # with open('model2019_textureMapping.json') as json_file:
+    #     json_data = json.load(json_file)
+    mm = utils.MorphableModel(shape_model, color_model, expression_model)
+    mesh = mm.get_sample(np.random.randn(199).astype(np.float32), np.random.randn(199).astype(np.float32))
+    utils.write_obj(mesh, 'doit.obj')
+
+    # mesh = mm.get_mean()
+    # start = time.time()
+    # utils.write_obj(mesh, 'mean.obj')
+    # #img = utils.generate_uv_map(mesh, 0.0, 0.0, 0.0, [0.0,1.0,1.0])
+    # #print(time.time() - start)
+    # #cv2.imwrite('uv_map.png', img*255)
+    # utils.save_color_map(mesh, "mean.npy")
+    # #utils.write_textured_obj(mesh, 'mean.obj')
+    # # blendshapes = eos.morphablemodel.load_blendshapes('expression_blendshapes_3448.bin')
+    # # print(len(blendshapes))
+
+    # camera_distance = 2.732
+    # elevation = 30
+    # azimuth = 120
+    # texture_size = 2
 
     
